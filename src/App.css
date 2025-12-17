@@ -48,3 +48,13 @@
     color: var(--node-cyan);
     margin-top: 4px;
 }
+
+.app-title .app-subtitle {
+    color: var(--node-cyan);
+}
+
+.app-title .app-metrics {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 8px;
+}

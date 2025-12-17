@@ -4,15 +4,18 @@
  * Simulates particle physics at 60 FPS using requestAnimationFrame.
  * Uses Refs for mutable state to avoid React re-renders.
  * 
- * Algorithm:
- * 1. Each node REPELS every other node (Coulomb's Law)
- * 2. Connected nodes are ATTRACTED (Hooke's Law)
- * 3. All nodes pulled toward CENTER (prevents drift)
- * 4. Velocity DAMPENED each frame (energy dissipation)
+ * Architecture:
+ * 1. CortexEngine: AI decision trees for behavioral steering
+ * 2. Force Calculation: Coulomb repulsion + Hooke attraction
+ * 3. NewtonianIntegrator: Velocity/position updates
+ * 4. ChronosBuffer: Frame-perfect time travel recording
  */
 
 import { useRef, useEffect, useCallback } from 'react';
 import { Vector2D } from '../physics/Vector2D';
+import { CortexEngine, CognitivePacket, CognitiveEntity } from '../ai/CortexEngine';
+import { ChronosBuffer } from '../core/time/ChronosBuffer';
+import { KineticState } from '../physics/core/NewtonianIntegrator';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Types
@@ -26,14 +29,9 @@ export interface PhysicsNode {
     readonly type?: 'tutor' | 'student' | 'subject';
 }
 
-interface Particle {
+interface Particle extends KineticState {
     id: string;
-    position: Vector2D;
-    velocity: Vector2D;
-    acceleration: Vector2D;
-    mass: number;
     color: number;
-    radius: number;
     type: 'tutor' | 'student' | 'subject';
     isConnected: boolean;
 }
@@ -56,7 +54,7 @@ export interface ParticlePosition {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// Default Configuration
+// Configuration Constants
 // ════════════════════════════════════════════════════════════════════════════
 
 const DEFAULT_CONFIG: PhysicsConfig = {
@@ -66,6 +64,11 @@ const DEFAULT_CONFIG: PhysicsConfig = {
     targetDistance: 100,
     centerGravity: 0.01,
 };
+
+const CHRONOS_CONFIG = {
+    MAX_FRAMES: 600,    // 10 seconds at 60fps
+    ENABLED: true,
+} as const;
 
 // ════════════════════════════════════════════════════════════════════════════
 // Hook Implementation
@@ -85,7 +88,14 @@ export function usePhysicsEngine(
     const particlesRef = useRef<Map<string, Particle>>(new Map());
     const isRunningRef = useRef(true);
     const frameIdRef = useRef<number>(0);
+    const tickRef = useRef<number>(0);
     const connectionsRef = useRef<Set<string>>(new Set());
+
+    // AI Cortex: Per-entity cognitive state
+    const cortexRef = useRef<Map<string, CognitivePacket>>(new Map());
+
+    // Time Travel: Chronos Buffer for frame recording
+    const chronosRef = useRef<ChronosBuffer | null>(null);
 
     // ═══════════════════════════════════════════════════════════════════════
     // Initialize / Update Particles
@@ -107,27 +117,36 @@ export function usePhysicsEngine(
             } else {
                 // Create new particle with seeded position
                 const angle = node.xSeed * Math.PI * 2;
-                const radius = Math.random() * Math.min(canvasWidth, canvasHeight) * 0.3;
+                const spawnRadius = Math.random() * Math.min(canvasWidth, canvasHeight) * 0.3;
 
                 updated.set(node.id, {
                     id: node.id,
                     position: new Vector2D(
-                        canvasWidth / 2 + Math.cos(angle) * radius,
-                        canvasHeight / 2 + Math.sin(angle) * radius
+                        canvasWidth / 2 + Math.cos(angle) * spawnRadius,
+                        canvasHeight / 2 + Math.sin(angle) * spawnRadius
                     ),
                     velocity: Vector2D.zero(),
                     acceleration: Vector2D.zero(),
                     mass: node.mass,
-                    color: node.color,
+                    damping: settings.damping,
                     radius: 20 + node.mass * 2,
+                    color: node.color,
                     type: node.type ?? 'tutor',
                     isConnected: false,
                 });
+
+                // Initialize cognitive packet for new entity
+                cortexRef.current.set(node.id, CortexEngine.createCognitivePacket());
             }
         }
 
         particlesRef.current = updated;
-    }, [canvasWidth, canvasHeight]);
+
+        // Initialize Chronos Buffer once we know entity count
+        if (CHRONOS_CONFIG.ENABLED && !chronosRef.current && newNodes.length > 0) {
+            chronosRef.current = new ChronosBuffer(CHRONOS_CONFIG.MAX_FRAMES, newNodes.length);
+        }
+    }, [canvasWidth, canvasHeight, settings.damping]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // Force Calculations
@@ -170,6 +189,7 @@ export function usePhysicsEngine(
     // ═══════════════════════════════════════════════════════════════════════
     const simulate = useCallback(() => {
         const particles = Array.from(particlesRef.current.values());
+        const tick = tickRef.current++;
 
         // Reset accelerations
         for (const p of particles) {
@@ -177,7 +197,36 @@ export function usePhysicsEngine(
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        // A. REPULSION (O(n²) - optimize with QuadTree for large n)
+        // PHASE 0: AI CORTEX PROCESSING
+        // Each entity thinks and generates steering impulse
+        // ═══════════════════════════════════════════════════════════════════
+        const cognitiveEntities: CognitiveEntity[] = particles.map(p => ({
+            ...p,
+            id: p.id,
+        }));
+
+        for (const p of particles) {
+            let cortex = cortexRef.current.get(p.id);
+            if (!cortex) {
+                cortex = CortexEngine.createCognitivePacket();
+                cortexRef.current.set(p.id, cortex);
+            }
+
+            // AI decides steering force based on environment
+            const cogEntity: CognitiveEntity = { ...p, id: p.id };
+            const steeringImpulse = CortexEngine.process(
+                cogEntity,
+                cortex,
+                cognitiveEntities,
+                tick
+            );
+
+            // Apply steering as additional force
+            p.acceleration = p.acceleration.add(steeringImpulse);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE A: REPULSION (O(n²) - optimize with QuadTree for large n)
         // ═══════════════════════════════════════════════════════════════════
         for (let i = 0; i < particles.length; i++) {
             for (let j = i + 1; j < particles.length; j++) {
@@ -192,7 +241,7 @@ export function usePhysicsEngine(
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        // B. ATTRACTION (only for connected nodes)
+        // PHASE B: ATTRACTION (only for connected nodes)
         // ═══════════════════════════════════════════════════════════════════
         for (const connectionKey of connectionsRef.current) {
             const [id1, id2] = connectionKey.split(':');
@@ -207,7 +256,7 @@ export function usePhysicsEngine(
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        // C. CENTER GRAVITY + INTEGRATION
+        // PHASE C: CENTER GRAVITY + INTEGRATION
         // ═══════════════════════════════════════════════════════════════════
         for (const p of particles) {
             // Add center gravity
@@ -225,6 +274,13 @@ export function usePhysicsEngine(
                 Math.max(p.radius, Math.min(canvasWidth - p.radius, p.position.x)),
                 Math.max(p.radius, Math.min(canvasHeight - p.radius, p.position.y))
             );
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // PHASE D: CHRONOS RECORDING (Time Travel)
+        // ═══════════════════════════════════════════════════════════════════
+        if (chronosRef.current) {
+            chronosRef.current.recordFrame(particles);
         }
     }, [
         calculateRepulsion,
@@ -328,7 +384,40 @@ export function usePhysicsEngine(
         }
     }, []);
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Chronos (Time Travel) API
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const scrubTimeline = useCallback((percentage: number): void => {
+        if (!chronosRef.current) return;
+
+        const framesBack = chronosRef.current.scrub(percentage);
+        const particles = Array.from(particlesRef.current.values());
+        chronosRef.current.replayFrame(framesBack, particles);
+    }, []);
+
+    const getTimelineMetrics = useCallback(() => {
+        if (!chronosRef.current) return null;
+        return chronosRef.current.getMetadata();
+    }, []);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Cortex (AI) API
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const getCortexState = useCallback((id: string) => {
+        return cortexRef.current.get(id);
+    }, []);
+
+    const setEntityTarget = useCallback((entityId: string, targetId: string): void => {
+        const cortex = cortexRef.current.get(entityId);
+        if (cortex) {
+            CortexEngine.setTarget(cortex, targetId);
+        }
+    }, []);
+
     return {
+        // Core Physics
         getPositions,
         findParticleAt,
         getDistance,
@@ -338,5 +427,14 @@ export function usePhysicsEngine(
         resume,
         setParticlePosition,
         getConnections: () => Array.from(connectionsRef.current),
+
+        // Chronos (Time Travel)
+        scrubTimeline,
+        getTimelineMetrics,
+
+        // Cortex (AI)
+        getCortexState,
+        setEntityTarget,
     };
 }
+

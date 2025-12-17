@@ -1,0 +1,100 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Schedule Heatmap - Binary Time-Strip Styles
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.schedule-heatmap {
+    background: rgba(10, 10, 15, 0.9);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.schedule-heatmap.compact {
+    padding: 8px;
+}
+
+/* Day Labels */
+.schedule-heatmap__labels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: absolute;
+    left: -32px;
+    top: 0;
+}
+
+.schedule-heatmap__day-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    height: 8px;
+    line-height: 8px;
+}
+
+/* Grid Container */
+.schedule-heatmap__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Row (One Day) */
+.schedule-heatmap__row {
+    display: flex;
+    gap: 2px;
+}
+
+/* Cell (One Hour) */
+.schedule-heatmap__cell {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    cursor: default;
+}
+
+.schedule-heatmap__cell.available {
+    background: #4ADE80;
+}
+
+.schedule-heatmap__cell.busy {
+    background: #374151;
+}
+
+.schedule-heatmap__cell.matched {
+    background: #00D4FF;
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+}
+
+.schedule-heatmap__cell:hover {
+    transform: scale(1.2);
+}
+
+/* Hour Labels */
+.schedule-heatmap__hour-labels {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 4px;
+}
+
+.schedule-heatmap__hour-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Compact Mode */
+.schedule-heatmap.compact .schedule-heatmap__cell {
+    width: 6px;
+    height: 6px;
+}
+
+.schedule-heatmap.compact .schedule-heatmap__row {
+    gap: 1px;
+}
+
+.schedule-heatmap.compact .schedule-heatmap__grid {
+    gap: 1px;
+}

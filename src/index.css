@@ -1,0 +1,146 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Global CSS Variables - Constellation HUD Design System
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@300;400&family=Space+Grotesk:wght@500;600&display=swap');
+
+:root {
+    /* ═══════════════════════════════════════════════════════════════════════
+     BACKGROUND
+     ═══════════════════════════════════════════════════════════════════════ */
+    --bg-void-black: #050505;
+    --bg-deep-space: #0a0a0f;
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     NODES (Tutor Categories)
+     ═══════════════════════════════════════════════════════════════════════ */
+    --node-cyan: #00D4FF;
+    /* Sciences */
+    --node-magenta: #FF00FF;
+    /* Arts */
+    --node-amber: #FFB800;
+    /* Languages */
+    --node-green: #00FF88;
+    /* Exam Prep */
+    --node-purple: #8B5CF6;
+    /* Programming */
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     CONNECTIONS
+     ═══════════════════════════════════════════════════════════════════════ */
+    --connection-idle: rgba(255, 255, 255, 0.1);
+    --connection-hover: rgba(255, 255, 255, 0.4);
+    --connection-match: rgba(0, 255, 136, 0.8);
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     UI OVERLAY (Glassmorphism)
+     ═══════════════════════════════════════════════════════════════════════ */
+    --glass-bg: rgba(10, 10, 15, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-accent: rgba(0, 212, 255, 0.5);
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     STATUS INDICATORS
+     ═══════════════════════════════════════════════════════════════════════ */
+    --status-available: #4ADE80;
+    --status-busy: #374151;
+    --status-conflict: #EF4444;
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     ═══════════════════════════════════════════════════════════════════════ */
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-sans: 'Inter', 'Space Grotesk', system-ui, sans-serif;
+    --font-display: 'Space Grotesk', sans-serif;
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     SPACING
+     ═══════════════════════════════════════════════════════════════════════ */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     Z-INDEX LAYERS
+     ═══════════════════════════════════════════════════════════════════════ */
+    --z-canvas: 1;
+    --z-tooltip: 10;
+    --z-hud: 50;
+    --z-modal: 100;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Reset & Base Styles
+   ══════════════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-void-black);
+    color: rgba(255, 255, 255, 0.9);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Utility Classes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+}
+
+.text-mono {
+    font-family: var(--font-mono);
+}
+
+.text-display {
+    font-family: var(--font-display);
+}
+
+.neon-glow {
+    box-shadow: 0 0 20px var(--node-cyan);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Scrollbar Styling
+   ══════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-deep-space);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
